@@ -1,0 +1,11 @@
+.DS_Store
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Large or local artifacts
+data/*.pt
+data/*.keras
+data/*.pkl
+data/*.joblib
+data/*.txt

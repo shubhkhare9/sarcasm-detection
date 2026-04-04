@@ -1,0 +1,6 @@
+Model,Accuracy,Precision,Recall,F1,Type,Rank
+BERT,0.9294,0.9296,0.9294,0.9294,Transformer,1
+BiLSTM,0.8691,0.8693,0.8691,0.8689,Deep Learning,2
+SVM,0.7957,0.7959,0.7957,0.7954,Traditional ML,3
+Naive Bayes,0.7878,0.7877,0.7878,0.7878,Traditional ML,4
+Logistic Regression,0.7862,0.7871,0.7862,0.7854,Traditional ML,5

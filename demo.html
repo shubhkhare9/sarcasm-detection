@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sarcasm Detection Demo</title>
+    <style>
+      :root {
+        --bg: #0b0f14;
+        --panel: #111827;
+        --panel-2: #0f172a;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #f59e0b;
+        --accent-2: #22d3ee;
+        --border: #1f2937;
+        --good: #22c55e;
+        --bad: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+        background: radial-gradient(1200px 600px at 10% 10%, #1e293b 0%, #0b0f14 50%),
+                    radial-gradient(900px 500px at 90% 20%, #0f172a 0%, #0b0f14 45%);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+      }
+      .shell {
+        width: min(980px, 100%);
+        display: grid;
+        gap: 24px;
+      }
+      .hero {
+        display: grid;
+        gap: 12px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(34, 211, 238, 0.15);
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        color: var(--accent-2);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 5vw, 44px);
+        line-height: 1.05;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+      }
+      .card {
+        background: linear-gradient(160deg, rgba(17,24,39,0.95), rgba(15,23,42,0.95));
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      }
+      .input-area {
+        display: grid;
+        gap: 12px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 150px;
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        color: var(--text);
+        padding: 14px 16px;
+        border-radius: 12px;
+        font-size: 15px;
+        resize: vertical;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        background: linear-gradient(135deg, var(--accent), #f97316);
+        color: #0b0f14;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      button.secondary {
+        background: #111827;
+        color: var(--text);
+        border: 1px solid #1f2937;
+      }
+      button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(245,158,11,0.25); }
+      .result {
+        display: grid;
+        gap: 10px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .pill.good { background: rgba(34,197,94,0.15); color: var(--good); border: 1px solid rgba(34,197,94,0.4); }
+      .pill.bad { background: rgba(239,68,68,0.15); color: var(--bad); border: 1px solid rgba(239,68,68,0.4); }
+      .metric {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .samples {
+        display: grid;
+        gap: 8px;
+      }
+      .samples button {
+        background: #0b1220;
+        color: var(--text);
+        border: 1px solid #1f2937;
+        text-align: left;
+        font-weight: 500;
+      }
+      .status {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      @media (max-width: 860px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="hero">
+        <span class="badge">Sarcasm Detector</span>
+        <h1>News headline sarcasm, instantly.</h1>
+        <p>Type a headline and run the fine-tuned BERT model trained on the News Headlines dataset.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card input-area">
+          <label for="headline">Headline</label>
+          <textarea id="headline" placeholder="e.g., City vows to end traffic by adding more lanes"></textarea>
+          <div class="row">
+            <button id="predict">Predict</button>
+            <button id="clear" class="secondary">Clear</button>
+          </div>
+          <div class="status" id="status">Server status: not checked</div>
+        </div>
+
+        <div class="card result">
+          <div id="label" class="pill">Awaiting prediction</div>
+          <div class="metric" id="score">—</div>
+          <p id="explain">Submit a headline to see the model output.</p>
+          <div class="samples">
+            <p>Try a sample:</p>
+            <button data-sample="local man heroically saves family from fire by calling 911">local man heroically saves family from fire by calling 911</button>
+            <button data-sample="scientists discover new element that cures laziness">scientists discover new element that cures laziness</button>
+            <button data-sample="nation celebrates as monday becomes official weekend">nation celebrates as monday becomes official weekend</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const statusEl = document.getElementById('status');
+      const labelEl = document.getElementById('label');
+      const scoreEl = document.getElementById('score');
+      const explainEl = document.getElementById('explain');
+      const headlineEl = document.getElementById('headline');
+
+      async function checkServer() {
+        try {
+          const res = await fetch('/health');
+          statusEl.textContent = res.ok ? 'Server status: online' : 'Server status: error';
+        } catch (err) {
+          statusEl.textContent = 'Server status: offline (run python demo.py)';
+        }
+      }
+
+      async function predict() {
+        const headline = headlineEl.value.trim();
+        if (!headline) {
+          labelEl.textContent = 'Awaiting prediction';
+          labelEl.className = 'pill';
+          scoreEl.textContent = '—';
+          explainEl.textContent = 'Please enter a headline.';
+          return;
+        }
+
+        labelEl.textContent = 'Running...';
+        labelEl.className = 'pill';
+        scoreEl.textContent = '—';
+        explainEl.textContent = 'Contacting the model...';
+
+        try {
+          const res = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ headline })
+          });
+
+          if (!res.ok) throw new Error('Bad response');
+          const data = await res.json();
+
+          const isSarcastic = data.label === 1;
+          labelEl.textContent = isSarcastic ? 'Sarcastic' : 'Not Sarcastic';
+          labelEl.className = `pill ${isSarcastic ? 'bad' : 'good'}`;
+          scoreEl.textContent = `${Math.round(data.probability * 100)}% confidence`;
+          explainEl.textContent = data.explain;
+        } catch (err) {
+          labelEl.textContent = 'Prediction failed';
+          labelEl.className = 'pill bad';
+          scoreEl.textContent = '—';
+          explainEl.textContent = 'Could not reach the server. Run: python demo.py';
+        }
+      }
+
+      document.getElementById('predict').addEventListener('click', predict);
+      document.getElementById('clear').addEventListener('click', () => {
+        headlineEl.value = '';
+        labelEl.textContent = 'Awaiting prediction';
+        labelEl.className = 'pill';
+        scoreEl.textContent = '—';
+        explainEl.textContent = 'Submit a headline to see the model output.';
+      });
+
+      document.querySelectorAll('[data-sample]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          headlineEl.value = btn.dataset.sample;
+          predict();
+        });
+      });
+
+      checkServer();
+    </script>
+  </body>
+</html>

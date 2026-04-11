@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fine-tune best_bert.pt on extra_headlines.csv (scraped data).
+Fine-tune best_bert.pt on extra_headlines.csv (scraped data) + babylonbee_samples.csv.
 Saves updated weights back to data/best_bert.pt.
 
 Usage:
@@ -23,6 +23,7 @@ from tqdm import tqdm
 ROOT       = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR   = os.path.join(ROOT, "data")
 EXTRA_CSV  = os.path.join(DATA_DIR, "extra_headlines.csv")
+BABYLONBEE_CSV = os.path.join(DATA_DIR, "babylonbee_samples.csv")
 MODEL_PATH = os.path.join(DATA_DIR, "best_bert.pt")
 
 MODEL_NAME = "bert-base-uncased"
@@ -91,8 +92,15 @@ def main():
         print(f"❌ {EXTRA_CSV} not found. Run scrape_headlines.py first.")
         return
 
-    # Load new data
+    # Load scraped data
     df = pd.read_csv(EXTRA_CSV).dropna(subset=["headline"])
+    
+    # Merge with Babylon Bee samples if available
+    if os.path.exists(BABYLONBEE_CSV):
+        bb_df = pd.read_csv(BABYLONBEE_CSV).dropna(subset=["headline"])
+        df = pd.concat([df, bb_df], ignore_index=True)
+        print(f"✓ Merged {len(bb_df)} Babylon Bee samples")
+    
     df["headline"] = df["headline"].astype(str).str.lower().str.strip()
     df = df[df["headline"].str.len() > 5].reset_index(drop=True)
     print(f"Loaded {len(df)} headlines  (sarcastic: {df['is_sarcastic'].sum()}, real: {(df['is_sarcastic']==0).sum()})")

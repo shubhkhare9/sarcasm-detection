@@ -25,6 +25,7 @@ CTX = ssl.create_default_context(cafile=certifi.where())
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)"}
 
 SATIRE_FEEDS = [
+    # "https://babylonbee.com/feed",  # Blocks automated scraping (403)
     "https://www.thebeaverton.com/feed/",
     "https://newsthump.com/feed/",
     "https://waterfordwhispersnews.com/feed/",
@@ -56,6 +57,7 @@ REAL_FEEDS = [
 ]
 
 # Paginated feeds — append ?paged=N
+# Note: Babylon Bee blocks automated scraping, use add_babylonbee_samples.py instead
 PAGINATED_SATIRE = [
     "https://www.thebeaverton.com/feed/",
     "https://newsthump.com/feed/",

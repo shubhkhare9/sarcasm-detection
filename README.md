@@ -15,14 +15,14 @@ Binary text classification to detect sarcasm in news headlines.
 1. Download from: https://nlp.stanford.edu/data/glove.6B.zip
 2. Unzip and place `glove.6B.100d.txt` in `data/`
 
-## Models
-| # | Notebook | Model | Expected F1 |
-|---|----------|-------|-------------|
-| 1 | 03 | Naive Bayes (TF-IDF) | 0.78–0.82 |
-| 2 | 03 | Logistic Regression (TF-IDF) | 0.81–0.85 |
-| 3 | 03 | SVM (TF-IDF) | 0.83–0.87 |
-| 4 | 04 | BiLSTM + GloVe | 0.86–0.90 |
-| 5 | 05 | BERT (fine-tuned) | 0.91–0.94 |
+## Models & Performance
+| # | Notebook | Model | Test F1 | Test Accuracy |
+|---|----------|-------|---------|---------------|
+| 1 | 03 | Naive Bayes (TF-IDF) | 0.7878 | 0.7878 |
+| 2 | 03 | Logistic Regression (TF-IDF) | 0.7854 | 0.7862 |
+| 3 | 03 | SVM (TF-IDF) | 0.7954 | 0.7957 |
+| 4 | 04 | BiLSTM + GloVe | 0.8689 | 0.8691 |
+| 5 | 05 | BERT (fine-tuned) | 0.9294 | 0.9294 |
 
 ## Run Order
 ```
@@ -51,30 +51,40 @@ Then open `http://127.0.0.1:8000` in your browser.
 
 ---
 
-## Improving Generalization (Optional)
+## Improving Generalization (Recommended for Babylon Bee & Other Sources)
 
-The base BERT model was trained on The Onion (sarcastic) vs HuffPost (real news).
-To improve performance on other satire sources, run the scraper and fine-tuning pipeline:
+The base BERT model was trained on **The Onion** (sarcastic) vs **HuffPost** (real news).
+To improve performance on other satire sources like **Babylon Bee**, run the fine-tuning pipeline:
 
-### Step 1 — Scrape new headlines
+### Step 1 — Add Babylon Bee samples
+```bash
+python add_babylonbee_samples.py
+```
+Creates `data/babylonbee_samples.csv` with 50 curated Babylon Bee headlines.
+> Note: Babylon Bee blocks automated scraping, so we use manually curated samples.
+
+### Step 2 — Scrape other satire sources
 ```bash
 python scrape_headlines.py
 ```
 Scrapes sarcastic headlines from **The Beaverton, NewsThump, ClickHole, Reductress, The Shovel**
 and real news from **NPR, BBC, NYT, The Guardian**.
-Saves to `data/extra_headlines.csv` (~550 balanced headlines).
+Saves to `data/extra_headlines.csv` (~500+ balanced headlines).
 
-### Step 2 — Fine-tune BERT on new data
+### Step 3 — Fine-tune BERT on combined data
 ```bash
 python finetune_bert.py
 ```
-Loads `data/best_bert.pt`, fine-tunes for 3 epochs on the scraped data,
-and saves the updated weights back to `data/best_bert.pt`.
+Loads `data/best_bert.pt`, merges Babylon Bee samples with scraped data,
+fine-tunes for 3 epochs (~550+ total examples), and saves updated weights.
 
-### Step 3 — Restart the demo
+### Step 4 — Restart the demo
 ```bash
 python demo.py
 ```
+
+**Expected Improvement:** After fine-tuning, the model will correctly classify Babylon Bee headlines
+like "Kamala Harris 'Thinking About' Losing Again In 2028" as sarcastic.
 
 ---
 
@@ -88,6 +98,7 @@ python demo.py
 │   ├── best_bert.pt                       ← fine-tuned BERT weights (used by demo)
 │   ├── best_bilstm.keras                  ← trained BiLSTM model
 │   ├── extra_headlines.csv                ← scraped headlines for fine-tuning
+│   ├── babylonbee_samples.csv             ← curated Babylon Bee headlines
 │   └── results.pkl                        ← all model evaluation results
 ├── notebook/
 │   ├── 01_data_exploration.ipynb
@@ -99,7 +110,8 @@ python demo.py
 ├── outputs/                               ← saved plots and charts
 ├── demo.py                                ← web server (BERT prediction API)
 ├── demo.html                              ← frontend UI
+├── add_babylonbee_samples.py              ← creates Babylon Bee training samples
 ├── scrape_headlines.py                    ← scrapes satire + real news headlines
-├── finetune_bert.py                       ← fine-tunes BERT on scraped data
+├── finetune_bert.py                       ← fine-tunes BERT on scraped + BB data
 └── requirements.txt
 ```

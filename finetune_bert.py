@@ -30,7 +30,7 @@ MODEL_NAME = "bert-base-uncased"
 MAX_LEN    = 64
 BATCH_SIZE = 16
 EPOCHS     = 3
-LR         = 2e-5
+LR         = 5e-6  # Lower LR to prevent overwriting original BERT knowledge (catastrophic forgetting)
 device     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ── Dataset ───────────────────────────────────────────────────────────────────

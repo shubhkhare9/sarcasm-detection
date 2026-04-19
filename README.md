@@ -1,19 +1,31 @@
-# Sarcasm Detection in News Headlines — NLP Project
+# Sarcasm Detection in News Headlines — NLP + MLOps Project
 
-## Overview
-Binary text classification to detect sarcasm in news headlines.
-- **Dataset:** News Headlines Dataset for Sarcasm Detection (Rishabh Misra)
+## Problem Statement
+Sarcasm detection is a critical NLP challenge because sarcastic text systematically misleads downstream sentiment analysis models. A headline like *"Nation's Economists Agree Economy Doing Great"* carries the opposite sentiment to its literal meaning, causing failures in automated content understanding.
+
+## Business Use Case
+- Improve sentiment analysis accuracy in social media monitoring
+- Customer review analytics and feedback classification
+- Social media moderation and toxicity filtering
+- News aggregation and content tagging pipelines
+
+---
+
+## Dataset
+- **Name:** News Headlines Dataset for Sarcasm Detection (Rishabh Misra)
 - **Source:** https://www.kaggle.com/datasets/rmisra/news-headlines-dataset-for-sarcasm-detection
 - **Task:** Sarcastic (1) vs Not Sarcastic (0)
 - **Size:** ~28,000 headlines
 
-## Dataset Setup
+### Dataset Setup
 1. Download `Sarcasm_Headlines_Dataset_v2.json` from Kaggle
 2. Place it in the `data/` folder
 
-## GloVe Setup (for Notebook 4)
+### GloVe Setup (for Notebook 4)
 1. Download from: https://nlp.stanford.edu/data/glove.6B.zip
 2. Unzip and place `glove.6B.100d.txt` in `data/`
+
+---
 
 ## Models & Performance
 | # | Notebook | Model | Test F1 | Test Accuracy |
@@ -24,7 +36,85 @@ Binary text classification to detect sarcasm in news headlines.
 | 4 | 04 | BiLSTM + GloVe | 0.8689 | 0.8691 |
 | 5 | 05 | BERT (fine-tuned) | 0.9294 | 0.9294 |
 
-## Run Order
+---
+
+## Project Structure
+```
+├── src/
+│   ├── data_ingestion.py      ← load raw/clean data
+│   ├── preprocessing.py       ← clean text, TF-IDF, splits
+│   ├── train.py               ← train NB/LR/SVM with MLflow tracking
+│   ├── evaluate.py            ← evaluate and log test metrics
+│   └── predict.py             ← inference + drift detection
+├── pipeline/
+│   └── training_pipeline.py   ← end-to-end orchestrator
+├── tests/
+│   └── test_preprocessing.py  ← pytest unit tests
+├── notebook/
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_preprocessing.ipynb
+│   ├── 03_traditional_ml.ipynb
+│   ├── 04_bilstm.ipynb
+│   ├── 05_bert.ipynb
+│   └── 06_comparative_analysis.ipynb
+├── data/
+│   ├── Sarcasm_Headlines_Dataset_v2.json  ← original dataset (Kaggle)
+│   ├── sarcasm_clean.csv                  ← cleaned dataset
+│   ├── tfidf.joblib                       ← fitted TF-IDF vectorizer
+│   ├── best_bert.pt                       ← fine-tuned BERT weights
+│   ├── best_bilstm.keras                  ← trained BiLSTM model
+│   └── results.pkl                        ← all model evaluation results
+├── outputs/                               ← saved plots and charts
+├── .github/workflows/ci.yml               ← GitHub Actions CI
+├── app.py                                 ← FastAPI prediction server
+├── demo.html                              ← frontend UI
+├── Dockerfile                             ← container definition
+├── dvc.yaml                               ← DVC pipeline stages
+├── requirements.txt
+└── .gitignore
+```
+
+---
+
+## Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Data Versioning with DVC
+```bash
+dvc init
+dvc add data/Sarcasm_Headlines_Dataset_v2.json
+git add data/.gitignore data/Sarcasm_Headlines_Dataset_v2.json.dvc
+git commit -m "Track dataset with DVC"
+```
+
+Run the full DVC pipeline:
+```bash
+dvc repro
+```
+
+---
+
+## Experiment Tracking with MLflow
+Training automatically logs parameters and metrics to MLflow.
+
+Run the pipeline:
+```bash
+python pipeline/training_pipeline.py
+```
+
+View the MLflow UI:
+```bash
+mlflow ui
+```
+Then open `http://127.0.0.1:5000`
+
+---
+
+## Run Notebooks (in order)
 ```
 01_data_exploration.ipynb     → EDA
 02_preprocessing.ipynb        → Cleaning, TF-IDF, sequences
@@ -34,84 +124,82 @@ Binary text classification to detect sarcasm in news headlines.
 06_comparative_analysis.ipynb → Final comparison
 ```
 
-## Install Dependencies
+---
+
+## API Deployment (FastAPI)
+
+### Run locally
 ```bash
-pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+Then open `http://127.0.0.1:8000`
+
+### Run with Docker
+```bash
+docker build -t sarcasm-detection .
+docker run -p 8000:8000 sarcasm-detection
 ```
 
-## Quick Demo (Local Web UI)
-The demo uses the fine-tuned **BERT model** (`data/best_bert.pt`) for predictions.
+### API Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Web UI |
+| GET | `/health` | Health check |
+| POST | `/predict` | Predict sarcasm |
 
+Example request:
 ```bash
-python demo.py
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"headline": "Area Man Solves All Problems"}'
 ```
-Then open `http://127.0.0.1:8000` in your browser.
-
-> First startup takes a few seconds longer as the BERT model (~440MB) loads into memory.
 
 ---
 
-## Improving Generalization (Recommended for Babylon Bee & Other Sources)
+## CI/CD
+GitHub Actions runs on every push:
+- Installs dependencies
+- Runs `pytest tests/`
 
-The base BERT model was trained on **The Onion** (sarcastic) vs **HuffPost** (real news).
-To improve performance on other satire sources like **Babylon Bee**, run the fine-tuning pipeline:
+See `.github/workflows/ci.yml`
+
+---
+
+## Monitoring & Logging
+- All modules use Python `logging` (INFO level)
+- Prediction inputs and outputs are logged
+- Basic data drift detection: flags if incoming headline word count deviates significantly from training distribution
+
+---
+
+## Improving Generalization (Babylon Bee & Other Sources)
 
 ### Step 1 — Add Babylon Bee samples
 ```bash
 python add_babylonbee_samples.py
 ```
-Creates `data/babylonbee_samples.csv` with 50 curated Babylon Bee headlines.
-> Note: Babylon Bee blocks automated scraping, so we use manually curated samples.
 
 ### Step 2 — Scrape other satire sources
 ```bash
 python scrape_headlines.py
 ```
-Scrapes sarcastic headlines from **The Beaverton, NewsThump, ClickHole, Reductress, The Shovel**
-and real news from **NPR, BBC, NYT, The Guardian**.
-Saves to `data/extra_headlines.csv` (~500+ balanced headlines).
 
-### Step 3 — Fine-tune BERT on combined data
+### Step 3 — Fine-tune BERT
 ```bash
 python finetune_bert.py
 ```
-Loads `data/best_bert.pt`, merges Babylon Bee samples with scraped data,
-fine-tunes for 3 epochs (~550+ total examples), and saves updated weights.
 
-### Step 4 — Restart the demo
+### Step 4 — Restart the API
 ```bash
-python demo.py
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
-
-**Expected Improvement:** After fine-tuning, the model will correctly classify Babylon Bee headlines
-like "Kamala Harris 'Thinking About' Losing Again In 2028" as sarcastic.
 
 ---
 
-## Project Structure
-```
-├── data/
-│   ├── Sarcasm_Headlines_Dataset_v2.json  ← original dataset (download from Kaggle)
-│   ├── sarcasm_clean.csv                  ← cleaned dataset (generated by notebook 01)
-│   ├── splits.joblib                      ← train/val/test splits
-│   ├── tfidf.joblib                       ← fitted TF-IDF vectorizer
-│   ├── best_bert.pt                       ← fine-tuned BERT weights (used by demo)
-│   ├── best_bilstm.keras                  ← trained BiLSTM model
-│   ├── extra_headlines.csv                ← scraped headlines for fine-tuning
-│   ├── babylonbee_samples.csv             ← curated Babylon Bee headlines
-│   └── results.pkl                        ← all model evaluation results
-├── notebook/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_preprocessing.ipynb
-│   ├── 03_traditional_ml.ipynb
-│   ├── 04_bilstm.ipynb
-│   ├── 05_bert.ipynb
-│   └── 06_comparative_analysis.ipynb
-├── outputs/                               ← saved plots and charts
-├── demo.py                                ← web server (BERT prediction API)
-├── demo.html                              ← frontend UI
-├── add_babylonbee_samples.py              ← creates Babylon Bee training samples
-├── scrape_headlines.py                    ← scrapes satire + real news headlines
-├── finetune_bert.py                       ← fine-tunes BERT on scraped + BB data
-└── requirements.txt
-```
+## Reproducibility Checklist
+- [x] `requirements.txt` — all dependencies pinned
+- [x] `dvc.yaml` — reproducible data + training pipeline
+- [x] `data/*.dvc` — dataset tracked with DVC
+- [x] MLflow — all experiments logged with parameters and metrics
+- [x] Random seeds fixed (`random_state=42`) throughout
+- [x] `Dockerfile` — fully containerized deployment

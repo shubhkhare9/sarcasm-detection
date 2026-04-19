@@ -3,9 +3,16 @@
 __pycache__/
 .ipynb_checkpoints/
 
-# Large or local artifacts
+# Large model artifacts (tracked via DVC or excluded)
 data/*.pt
 data/*.keras
 data/*.pkl
 data/*.joblib
 data/*.txt
+
+# MLflow
+mlruns/
+
+# DVC cache
+.dvc/cache/
+.dvc/tmp/

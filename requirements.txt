@@ -10,3 +10,10 @@ torch
 transformers
 tqdm
 requests
+fastapi
+uvicorn[standard]
+pydantic
+mlflow
+dvc
+pytest
+joblib

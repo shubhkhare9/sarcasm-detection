@@ -1,0 +1,26 @@
+stages:
+  preprocess:
+    cmd: python -c "from src.data_ingestion import load_raw_data; from src.preprocessing import preprocess, get_splits, fit_tfidf; df=load_raw_data(); df=preprocess(df); splits=get_splits(df); fit_tfidf(splits[0])"
+    deps:
+      - data/Sarcasm_Headlines_Dataset_v2.json
+      - src/data_ingestion.py
+      - src/preprocessing.py
+    outs:
+      - data/sarcasm_clean.csv
+      - data/tfidf.joblib
+
+  train:
+    cmd: python pipeline/training_pipeline.py
+    deps:
+      - data/sarcasm_clean.csv
+      - data/tfidf.joblib
+      - src/train.py
+      - src/evaluate.py
+      - pipeline/training_pipeline.py
+    outs:
+      - data/na.pkl
+      - data/lo.pkl
+      - data/sv.pkl
+    metrics:
+      - data/metrics.json:
+          cache: false

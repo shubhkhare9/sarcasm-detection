@@ -26,7 +26,7 @@ stages:
       size: 3656206
     - path: data/tfidf.joblib
       hash: md5
-      md5: d35a6cb14b9be0ccfa67fbb79c26c2b4
+      md5: 73e8002dc4423dfa7b6e6c7ad63d8042
       size: 769553
   train:
     cmd: python pipeline/training_pipeline.py

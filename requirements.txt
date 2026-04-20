@@ -13,7 +13,7 @@ requests
 fastapi
 uvicorn[standard]
 pydantic
-mlflow
+mlflow==2.13.2
 dvc
 pytest
 joblib

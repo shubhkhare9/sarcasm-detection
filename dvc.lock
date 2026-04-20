@@ -1,0 +1,70 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -c "from src.data_ingestion import load_raw_data; from 
+      src.preprocessing import preprocess, get_splits, fit_tfidf; import os; 
+      df=load_raw_data(); df=preprocess(df); 
+      df.to_csv(os.path.join('data','sarcasm_clean.csv'),index=False); 
+      splits=get_splits(df); fit_tfidf(splits[0])"
+    deps:
+    - path: data/Sarcasm_Headlines_Dataset_v2.json
+      hash: md5
+      md5: d3f89b520a70be355d6b3da9c975e059
+      size: 6057046
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: 0e9fcaad560d1ec57044401d2dff604b
+      size: 814
+    - path: src/preprocessing.py
+      hash: md5
+      md5: 8e5fabce189f8aa0e3780882a26257cf
+      size: 1515
+    outs:
+    - path: data/sarcasm_clean.csv
+      hash: md5
+      md5: c155b75d5615ebe43c1e9eadb5dcb412
+      size: 3656206
+    - path: data/tfidf.joblib
+      hash: md5
+      md5: d35a6cb14b9be0ccfa67fbb79c26c2b4
+      size: 769553
+  train:
+    cmd: python pipeline/training_pipeline.py
+    deps:
+    - path: data/sarcasm_clean.csv
+      hash: md5
+      md5: c155b75d5615ebe43c1e9eadb5dcb412
+      size: 3656206
+    - path: data/tfidf.joblib
+      hash: md5
+      md5: 73e8002dc4423dfa7b6e6c7ad63d8042
+      size: 769553
+    - path: pipeline/training_pipeline.py
+      hash: md5
+      md5: bd1e16d862b7432f987f90ed33900280
+      size: 2203
+    - path: src/evaluate.py
+      hash: md5
+      md5: 7d6b22aacc21b6ab1a4500cc392a9e7a
+      size: 1299
+    - path: src/train.py
+      hash: md5
+      md5: 41bdc9830358cf73fa651fa6fde1da8f
+      size: 1452
+    outs:
+    - path: data/lo.pkl
+      hash: md5
+      md5: cb59a7f0ee44ab3c26d00f8c9d7877d7
+      size: 160863
+    - path: data/metrics.json
+      hash: md5
+      md5: f180bca6d945306f55387c2c528926c0
+      size: 480
+    - path: data/na.pkl
+      hash: md5
+      md5: 0ebe8b3caca001fcd7da33985ad104c0
+      size: 640791
+    - path: data/sv.pkl
+      hash: md5
+      md5: 5072697995b7f83bb297a8c95f75b73d
+      size: 160731

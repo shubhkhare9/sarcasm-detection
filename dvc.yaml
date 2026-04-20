@@ -1,6 +1,6 @@
 stages:
   preprocess:
-    cmd: python -c "from src.data_ingestion import load_raw_data; from src.preprocessing import preprocess, get_splits, fit_tfidf; df=load_raw_data(); df=preprocess(df); splits=get_splits(df); fit_tfidf(splits[0])"
+    cmd: python -c "from src.data_ingestion import load_raw_data; from src.preprocessing import preprocess, get_splits, fit_tfidf; import os; df=load_raw_data(); df=preprocess(df); df.to_csv(os.path.join('data','sarcasm_clean.csv'),index=False); splits=get_splits(df); fit_tfidf(splits[0])"
     deps:
       - data/Sarcasm_Headlines_Dataset_v2.json
       - src/data_ingestion.py

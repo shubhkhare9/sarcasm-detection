@@ -29,8 +29,12 @@ app = FastAPI(title="Sarcasm Detection API", version="1.0")
 def load_assets():
     if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError("Missing data/best_bert.pt — run notebook 05 first.")
+    os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+    os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
     tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
-    model = BertForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=2)
+    model = BertForSequenceClassification.from_pretrained(
+        MODEL_NAME, num_labels=2, ignore_mismatched_sizes=True
+    )
     model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
     model.to(device)
     model.eval()

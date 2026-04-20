@@ -13,6 +13,7 @@ requests
 fastapi
 uvicorn[standard]
 pydantic
+evidently
 mlflow==2.13.2
 dvc
 pytest

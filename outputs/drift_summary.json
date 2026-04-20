@@ -1,0 +1,10 @@
+{
+  "reference_size": 28619,
+  "current_size": 601,
+  "reference_avg_word_count": 10.04,
+  "current_avg_word_count": 11.58,
+  "reference_label_balance": 0.4764,
+  "current_label_balance": 0.5424,
+  "word_count_drift_pct": 15.41,
+  "drift_detected": false
+}

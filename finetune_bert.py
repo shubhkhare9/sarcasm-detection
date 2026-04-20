@@ -94,12 +94,21 @@ def main():
 
     # Load scraped data
     df = pd.read_csv(EXTRA_CSV).dropna(subset=["headline"])
-    
+
     # Merge with Babylon Bee samples if available
     if os.path.exists(BABYLONBEE_CSV):
         bb_df = pd.read_csv(BABYLONBEE_CSV).dropna(subset=["headline"])
         df = pd.concat([df, bb_df], ignore_index=True)
         print(f"✓ Merged {len(bb_df)} Babylon Bee samples")
+
+    # Also mix in a sample of original training data to prevent forgetting
+    original_path = os.path.join(DATA_DIR, "sarcasm_clean.csv")
+    if os.path.exists(original_path):
+        orig = pd.read_csv(original_path).dropna(subset=["clean"])
+        orig = orig.rename(columns={"clean": "headline"})
+        orig = orig.sample(n=min(2000, len(orig)), random_state=42)
+        df = pd.concat([df, orig[["headline", "is_sarcastic"]]], ignore_index=True)
+        print(f"✓ Mixed in {len(orig)} original training samples to prevent forgetting")
     
     df["headline"] = df["headline"].astype(str).str.lower().str.strip()
     df = df[df["headline"].str.len() > 5].reset_index(drop=True)

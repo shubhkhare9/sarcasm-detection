@@ -16,3 +16,5 @@ mlruns/
 # DVC cache
 .dvc/cache/
 .dvc/tmp/
+mlflow.db
+data/best_bert.pt

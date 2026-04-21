@@ -140,6 +140,13 @@ docker build -t sarcasm-detection .
 docker run -p 8000:8000 sarcasm-detection
 ```
 
+### Production readiness notes
+- `GET /health` checks API liveness
+- `GET /ready` checks whether the BERT model loaded successfully
+- The API expects `data/best_bert.pt` to exist inside the deployment artifact
+- On first startup, Hugging Face may download `bert-base-uncased` tokenizer/config files unless they are already cached in the image or host environment
+- For repeatable cloud deploys, store large training artifacts in DVC / object storage and fetch them during build or release if you do not commit them
+
 ### API Endpoints
 | Method | Path | Description |
 |--------|------|-------------|
@@ -162,6 +169,11 @@ GitHub Actions runs on every push:
 - Runs `pytest tests/`
 
 See `.github/workflows/ci.yml`
+
+Important:
+- `protobuf<5` is pinned because newer protobuf releases break `mlflow==2.13.2`
+- `tensorflow==2.16.1` is pinned because newer TensorFlow releases pull protobuf versions that conflict with MLflow 2.13.2
+- Do not commit `.dvc/config.local`; keep DVC credentials in repository secrets or deployment environment variables
 
 ---
 

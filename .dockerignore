@@ -1,0 +1,26 @@
+.DS_Store
+.dvc/cache
+.dvc/tmp
+.git
+.github
+.pytest_cache
+.venv
+Extras
+__pycache__
+mlruns
+notebook
+outputs
+
+# Local databases and caches
+mlflow.db
+
+# Keep only the files needed for live inference inside the image
+data/*.csv
+!data/babylonbee_samples.csv
+!data/extra_headlines.csv
+data/*.json
+!data/metrics.json
+data/*.keras
+data/*.pkl
+data/*.joblib
+data/*.txt

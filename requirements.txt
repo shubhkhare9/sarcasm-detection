@@ -5,7 +5,7 @@ seaborn
 wordcloud
 nltk
 scikit-learn
-tensorflow
+tensorflow==2.16.1
 torch
 transformers
 tqdm
@@ -15,6 +15,7 @@ uvicorn[standard]
 pydantic
 evidently
 mlflow==2.13.2
+protobuf<5
 dvc
 pytest
 joblib

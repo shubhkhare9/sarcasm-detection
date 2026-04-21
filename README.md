@@ -127,6 +127,8 @@ Then open `http://127.0.0.1:5000`
 ---
 
 ## API Deployment (FastAPI)
+## 🚀 Live Demo
+http://34.224.91.139:8000
 
 ### Run locally
 ```bash

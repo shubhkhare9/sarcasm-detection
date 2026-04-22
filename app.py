@@ -133,6 +133,8 @@
 
 import logging
 import os
+import statistics
+from collections import deque
 from contextlib import asynccontextmanager
 
 import joblib
@@ -148,30 +150,31 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-ROOT       = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR   = os.path.join(ROOT, "data")
-SPLITS_PATH = os.path.join(DATA_DIR, "splits.joblib")   # contains the TF-IDF vectorizer
-SVM_PATH    = os.path.join(DATA_DIR, "svm.pkl")          # LinearSVC model
+ROOT        = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR    = os.path.join(ROOT, "data")
+TFIDF_PATH  = os.path.join(DATA_DIR, "tfidf.joblib")
+SVM_PATH    = os.path.join(DATA_DIR, "sv.pkl")
 HTML_PATH   = os.path.join(ROOT, "demo.html")
 
-VECTORIZER = None
-MODEL      = None
+VECTORIZER       = None
+MODEL            = None
 MODEL_LOAD_ERROR = None
 
-TFIDF_PATH = os.path.join(DATA_DIR, "tfidf.joblib")   # ← already exists ✅
-SVM_PATH   = os.path.join(DATA_DIR, "sv.pkl")          # ← use sv.pkl (newer) or svm.pkl
+# ── Monitoring state ────────────────────────────────────────────────────────
+prediction_log = deque(maxlen=100)
+stats_counter  = {"total": 0, "sarcastic": 0, "not_sarcastic": 0}
+TRAIN_AVG_WORDS = 8.0   # avg headline word count in training data
+DRIFT_THRESHOLD = 4.0   # flag drift if deviation exceeds this
+
 
 def load_assets():
     if not os.path.exists(TFIDF_PATH):
         raise FileNotFoundError("Missing data/tfidf.joblib")
     if not os.path.exists(SVM_PATH):
         raise FileNotFoundError("Missing data/sv.pkl")
-
     vectorizer = joblib.load(TFIDF_PATH)
-
     with open(SVM_PATH, "rb") as f:
         model = pickle.load(f)
-
     logger.info("SVM + TF-IDF loaded successfully")
     return vectorizer, model
 
@@ -228,12 +231,9 @@ def predict(req: PredictRequest):
 
     logger.info(f"Prediction request: '{headline}'")
 
-    features = VECTORIZER.transform([headline.lower()])
-    label    = int(MODEL.predict(features)[0])
-
-    # LinearSVC has no predict_proba — use decision_function score instead
-    # and convert to a 0–1 range with sigmoid
-    raw_score = float(MODEL.decision_function(features)[0])
+    features    = VECTORIZER.transform([headline.lower()])
+    label       = int(MODEL.predict(features)[0])
+    raw_score   = float(MODEL.decision_function(features)[0])
     probability = float(1 / (1 + np.exp(-raw_score)))   # sigmoid
 
     explain = (
@@ -242,8 +242,44 @@ def predict(req: PredictRequest):
         else "Model reads this as a straightforward headline."
     )
 
+    # ── Update monitoring ───────────────────────────────────────────────────
+    word_count = len(headline.split())
+    prediction_log.append({
+        "headline": headline,
+        "label": label,
+        "probability": round(probability, 4),
+        "word_count": word_count
+    })
+    stats_counter["total"] += 1
+    if label == 1:
+        stats_counter["sarcastic"] += 1
+    else:
+        stats_counter["not_sarcastic"] += 1
+
     logger.info(f"Result: label={label}, probability={probability:.4f}")
     return PredictResponse(label=label, probability=probability, explain=explain)
+
+
+@app.get("/metrics")
+def metrics():
+    recent = list(prediction_log)
+    if recent:
+        word_counts   = [r["word_count"] for r in recent]
+        avg_words     = round(statistics.mean(word_counts), 2)
+        drift_detected = abs(avg_words - TRAIN_AVG_WORDS) > DRIFT_THRESHOLD
+    else:
+        avg_words      = None
+        drift_detected = False
+
+    return {
+        "total_predictions":    stats_counter["total"],
+        "sarcastic_count":      stats_counter["sarcastic"],
+        "not_sarcastic_count":  stats_counter["not_sarcastic"],
+        "drift_detected":       drift_detected,
+        "avg_input_word_count": avg_words,
+        "train_avg_word_count": TRAIN_AVG_WORDS,
+        "recent_predictions":   recent
+    }
 
 
 if __name__ == "__main__":

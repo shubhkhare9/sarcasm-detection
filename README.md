@@ -129,6 +129,9 @@ Then open `http://127.0.0.1:5000`
 ## API Deployment (FastAPI)
 ## 🚀 Live Demo
 http://34.224.91.139:8000
+**Deployment Strategy:** Real-time REST API chosen because requests are single-headline 
+queries requiring immediate response. Batch deployment is unsuitable for this use case.
+
 
 ### Run locally
 ```bash
@@ -183,7 +186,9 @@ Important:
 - All modules use Python `logging` (INFO level)
 - Prediction inputs and outputs are logged
 - Basic data drift detection: flags if incoming headline word count deviates significantly from training distribution
-
+  
+**Governance:** Drift threshold set at 20% word count deviation. If exceeded, 
+dvc repro triggers full retraining pipeline.
 ---
 
 ## Improving Generalization (Babylon Bee & Other Sources)
